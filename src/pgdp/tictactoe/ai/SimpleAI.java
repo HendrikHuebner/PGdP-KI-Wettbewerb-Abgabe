@@ -11,7 +11,7 @@ public class SimpleAI extends PenguAI {
     private Random random;
 
     public SimpleAI() {
-        random = new Random();
+        random = new Random(1);
     }
 
     @Override

@@ -7,6 +7,7 @@ repositories {
     mavenCentral()
 }
 
+
 sourceSets {
     main {
         java {
@@ -15,7 +16,20 @@ sourceSets {
     }
     test {
         java {
-            srcDirs = []
+            srcDirs = ["test"]
         }
     }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.2'
+    implementation 'org.junit.jupiter:junit-jupiter-engine:5.7.2'
+
+    compileOnly 'org.junit.jupiter:junit-jupiter-params:5.7.2'
+    testCompileOnly 'org.junit.jupiter:junit-jupiter-params:5.7.2'
 }
