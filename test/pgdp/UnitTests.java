@@ -19,6 +19,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import pgdp.tictactoe.Field;
 import pgdp.tictactoe.Game;
 import pgdp.tictactoe.Move;
+import pgdp.tictactoe.ai.SimpleAI;
 
 public class UnitTests {
 
@@ -49,7 +50,7 @@ public class UnitTests {
 
     @ParameterizedTest
     @MethodSource
-    @DisplayName("Should play Artemis example")
+    @DisplayName("Should be able to handle out of bounds moves")
     public void outOfBoundsTest(Move[] movesX, Move[] movesO, boolean firstWon) {
         runTest(movesX, movesO, firstWon);
     }
@@ -59,11 +60,11 @@ public class UnitTests {
         Move[] move = parseString("0, 0, 0");
 
         Move[] outOfBounds1 = parseString("0, 0, -1");
-        Move[] outOfBounds2 = parseString("0, 0, 99");
+        Move[] outOfBounds2 = parseString("0, 0, 9");
         Move[] outOfBounds3 = parseString("0, -1, 0");
-        Move[] outOfBounds4 = parseString("0, 99, 0");
+        Move[] outOfBounds4 = parseString("0, 9, 0");
         Move[] outOfBounds5 = parseString("-1, 0, 0");
-        Move[] outOfBounds6 = parseString("99, 0, 0");
+        Move[] outOfBounds6 = parseString("9, 0, 0");
 
         return Stream.of(
             arguments(outOfBounds1, emptyMove, false),
@@ -83,14 +84,12 @@ public class UnitTests {
 
     @ParameterizedTest
     @MethodSource
-    @DisplayName("Should play Artemis example")
+    @DisplayName("Should be able to handle invalid moves")
     public void invalidMoveTest(Move[] movesX, Move[] movesO, boolean firstWon) {
         runTest(movesX, movesO, firstWon);
     }
 
     public static Stream<Arguments> invalidMoveTest() {
-        Move[] emptyMove = parseString("");
-
         Move[] move1 = parseString("5, 0, 0");
         Move[] invalid1 = parseString("0, 0, 0");
         Move[] invalid2 = parseString("5, 0, 0");
@@ -105,15 +104,69 @@ public class UnitTests {
         );
     }
 
-    public void runTest(Move[] movesX, Move[] movesO, boolean firstWon) {
+
+    /**
+     * If !expectedWinner there has to be at least one O on the board
+     * @param init
+     * @param winningMove
+     * @param expectedWinner
+     */
+    @ParameterizedTest
+    @MethodSource
+    @DisplayName("Should detect winning patterns")
+    public void winTest(Field[][] init, Move[] winningMove, boolean expectedWinner) {
+        if(expectedWinner) {
+            runTest(init, winningMove, null, true);
+        } else {
+            //calculate a move for x
+            Move moveO = null;
+            for(int i = 0; i < 9; i++) {
+                Field f = init[i / 3][i % 3];
+                if(f != null && f.firstPlayer()) {
+                    moveO = new Move(i / 3, i % 3, f.value());
+                    f = null;
+                    break;
+                }
+            }
+
+            runTest(init, new Move[]{moveO}, winningMove, false);
+        }
+    }
+
+    public static Stream<Arguments> winTest() {
+        return Stream.of(
+                arguments(parseStringField("-, x2, x3, -, -, -, -, -, -"), parseString("1, 0, 0"), true),
+        arguments(parseStringField("-, o2, o3, -, x8, -, -, -, -"), parseString("1, 0, 0"), false),
+        arguments(parseStringField("-, -, -, -, x2, x3, -, -, -"), parseString("1, 0, 1"), true),
+        arguments(parseStringField("-, x8, -, -, o2, o3, -, -, -"), parseString("1, 0, 1"), false),
+        arguments(parseStringField("-, -, -, -, -, -, -, x2, x3"), parseString("1, 0, 2"), true),
+        arguments(parseStringField("-, x8, -, -, -, -, -, o2, o3"), parseString("1, 0, 2"), false),
+        arguments(parseStringField("-, -, -, -, -, x2, -, -, x3"), parseString("1, 2, 0"), true),
+        arguments(parseStringField("-, -, -, x8, -, o2, -, -, o3"), parseString("1, 2, 0"), false),
+        arguments(parseStringField("-, -, -, -, x2, -, -, x3, -"), parseString("1, 1, 0"), true),
+        arguments(parseStringField("-, -, -, x8, o2, -, -, o3, -"), parseString("1, 1, 0"), false),
+        arguments(parseStringField("-, -, -, x2, -, -, x3, -, -"), parseString("1, 0, 0"), true),
+        arguments(parseStringField("-, -, -, o2, -, x8, o3, -, -"), parseString("1, 0, 0"), false),
+        arguments(parseStringField("-, -, -, -, x2, -, x3, -, -"), parseString("1, 2, 0"), true),
+        arguments(parseStringField("-, -, -, -, o2, -, o3, x8, -"), parseString("1, 2, 0"), false),
+        arguments(parseStringField("-, -, -, -, x2, -, -, -, x3"), parseString("1, 0, 0"), true),
+        arguments(parseStringField("-, -, -, -, o2, -, x8, -, o3"), parseString("1, 0, 0"), false));
+    }
+
+    private void runTest(Move[] x, Move[] o, boolean b) {
+        runTest(null, x, o, b);
+    }
+
+    public void runTest(Field[][] init, Move[] movesX, Move[] movesO, boolean firstWon) {
         TestAI X = new TestAI(movesX);
         TestAI O = new TestAI(movesO);
         Game g = new Game(X, O);
+        if(init != null)g.setField(init);
         g.playGame();
 
         assertEquals(firstWon ? X : O, g.getWinner());
         assertEquals(movesX.length, X.getIndex());
-        assertEquals(movesO.length, O.getIndex());
+        if(movesO != null) assertEquals(movesO.length, O.getIndex());
     }
 
     /**
@@ -134,5 +187,22 @@ public class UnitTests {
         }
 
         return moves;
+    }
+
+    public static Field[][] parseStringField(String s) {
+        s = s.replaceAll("\\s+","");
+        String[] split = s.split(",");
+
+        Field[][] field = new Field[3][3];
+
+        for(int i = 0; i < 9; i++) {
+            if(split[i].equals("-")) continue;
+            boolean first = split[i].toUpperCase().charAt(0) == 'X';
+            int value = Integer.valueOf(split[i].charAt(1)) - 48;
+
+            field[i % 3][i / 3] = new Field(value, first);
+        }
+
+        return field;
     }
 }

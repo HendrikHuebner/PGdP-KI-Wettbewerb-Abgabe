@@ -51,16 +51,17 @@ public class Game {
 
     public void step() {
         validate(true, first.makeMove(field, true, firstPlayedPieces, secondPlayedPieces));
+        if(this.winner != null) return;
         printBoard(field);
-        this.winner = checkForWinner();
 
+        this.winner = checkForWinner();
         if(this.winner != null) return;
 
         validate(false, second.makeMove(field, false, firstPlayedPieces, secondPlayedPieces));
-        printBoard(field);
-        this.winner = checkForWinner();
-
         if(this.winner != null) return;
+        printBoard(field);
+
+        this.winner = checkForWinner();
     }
 
     private PenguAI checkForWinner() {
