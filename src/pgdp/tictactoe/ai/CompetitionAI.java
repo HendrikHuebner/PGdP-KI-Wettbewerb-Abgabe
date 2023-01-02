@@ -4,21 +4,24 @@ import pgdp.tictactoe.Field;
 import pgdp.tictactoe.Move;
 import pgdp.tictactoe.PenguAI;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class CompetitionAI extends PenguAI {
 
     private int movesPlayed = 0;
-    private int maxDepth = 7;
+    private final int maxDepth;
+    private Map<PositionWrapper, Integer> transpositions = new HashMap<>();
+    private int duplicates = 0;
 
     //DEBUG
     private int statesSearched = 0;
 
-    public static void main(String[] args) {
-        CompetitionAI ai = new CompetitionAI();
+    public CompetitionAI(int maxDepth) {
+        this.maxDepth = maxDepth;
+    }
 
+    public CompetitionAI() {
+        this.maxDepth = 5;
     }
 
     /**
@@ -32,99 +35,118 @@ public class CompetitionAI extends PenguAI {
      * Opening table
      */
 
+
     @Override
     public Move makeMove(Field[][] board, boolean firstPlayer, boolean[] firstPlayedPieces, boolean[] secondPlayedPieces) {
+        this.duplicates = 0;
         //DEBUG
         int prevSearched = this.statesSearched;
         byte[] current = parseByteArr(board, firstPlayedPieces, secondPlayedPieces);
 
-        int alpha = Integer.MIN_VALUE;
-        int beta = Integer.MAX_VALUE;
+        int alpha = -99999;
+        int beta = 99999;
 
-        int bestVal = Integer.MIN_VALUE;
-        byte[] bestChild = null;
-
-        for (var child : getChildren(current, firstPlayer)) {
-            if (terminal(child, firstPlayer)) {
-                bestChild = child;
-                bestVal = Integer.MAX_VALUE;
-                break;
-            }
-
-            int value = alphaBeta(child, maxDepth - 1, alpha, beta, false, firstPlayer);
-            if (value > bestVal) {
-                bestVal = value;
-                bestChild = child;
-            }
-
-            if (bestVal >= beta) break;
-            alpha = Math.max(alpha, bestVal);
-        }
-
-        this.movesPlayed++;
+        Ret ret = alphaBeta(current, maxDepth, alpha, beta, true, firstPlayer);
 
         //DEBUG
-        if(Math.abs(bestVal) > 999999) {
-            System.out.println("Evaluation: Win in " + (Integer.MAX_VALUE - bestVal + 1));
+        if(Math.abs(ret.value) > 9999) {
+            if(ret.value > 9999){
+                System.out.println("Evaluation: Win in " + (99999 - ret.value + 1));
+            } else {
+                System.out.println("Evaluation: Loss in " + (99999 + ret.value + 1));
+            }
         }
-        else System.out.println("Evaluation: " + bestVal);
+        else System.out.println("Evaluation: " + ret.value);
         System.out.println("States searched: " + (statesSearched - prevSearched));
-        return getMove(current, bestChild);
+        movesPlayed++;
+        System.out.println("Positions checked: " + transpositions.size());
+        System.out.println("Duplicates: " + duplicates);
+        System.out.println("Percentage: " + (double)duplicates/(statesSearched - prevSearched));
+        return getMove(current, ret.moves[maxDepth - 1]);
     }
 
-    private int alphaBeta(byte[] current, int depth, int alpha, int beta, boolean max, boolean firstPlayer) {
-        //if (!firstPlayer) System.out.println(Arrays.toString(current));
+    private Ret alphaBeta(byte[] current, int depth, int alpha, int beta, boolean max, boolean playerX) {
+        this.statesSearched++;
 
-        if (depth == 0)
-            return heuristic(current, max);
+        if(maxDepth - depth <= 2) {
 
-        if (max) {
-            int value = Integer.MIN_VALUE;
-            for (var child : getChildren(current, firstPlayer)) {
-                if (terminal(child, firstPlayer))
-                    return Integer.MAX_VALUE - maxDepth + depth;
-
-                this.statesSearched++;
-                value = Math.max(value, alphaBeta(child, depth - 1, alpha, beta, false, firstPlayer));
-
-                if (value >= beta) break;
-                alpha = Math.max(alpha, value);
-            }
-
-            return value;
-        } else {
-            int value = Integer.MAX_VALUE;
-            for (var child : getChildren(current, !firstPlayer)) {
-                if (terminal(child, !firstPlayer))
-                    return Integer.MIN_VALUE + maxDepth - depth;
-
-                this.statesSearched++;
-                int tv = alphaBeta(child, depth - 1, alpha, beta, true, firstPlayer);
-                if(depth == 4 && current[3] == 7 && current[6] == 23)
-                    System.out.println();
-                value = Math.min(value, tv);
-                if (value <= alpha) break;
-                beta = Math.min(beta, value);
-            }
-
-            return value;
         }
+
+        if (depth == 0) {
+            byte[][] arr = new byte[maxDepth][];
+            arr[0] = current;
+            return new Ret(heuristic(current, playerX), arr);
+        }
+
+        int value = -99999;
+        byte[] bestChild = null;
+        Ret bestRet = null;
+
+        for (var child : getChildren(current, max == playerX)) {
+            if(child == null) break;
+
+            if(terminal(child, max == playerX)) {
+                byte[][] arr = new byte[maxDepth][];
+                arr[depth - 1] = child;
+                return new Ret(99999 - maxDepth + depth, arr);
+            }
+
+            Ret r = alphaBeta(child, depth - 1, -beta, -alpha, !max, playerX);
+
+
+            if(-r.value > value) {
+                bestRet = r;
+                bestChild = child;
+                value = -r.value;
+            }
+
+            alpha = Math.max(alpha, value);
+            if (alpha >= beta) break;
+
+        }
+
+        if(bestRet == null) {
+            //no children
+            byte[][] arr = new byte[maxDepth][];
+            arr[depth - 1] = null;
+
+            boolean draw = true;
+            for(int i = 0; i < 9; i++) {
+                if(current[((max == playerX) ? 9 : 18) + i] == 0) {
+                    draw = false;
+                    break;
+                }
+            }
+
+            return new Ret(draw ? 0 : -99999 + maxDepth - depth, arr);
+        }
+
+        var l = bestRet.moves();
+        l[depth - 1] = bestChild;
+        return new Ret(value, l);
+
     }
 
-    private int heuristic(byte[] field, boolean max) {
+    private static record Ret(int value, byte[][] moves) {}
+
+    private int heuristic(byte[] field, boolean playerX) {
         int value = 0;
 
         for (int i = 0; i < 9; i++) {
-            if (field[i] > 0) {
-                if (field[i] >= 16) {
-                    value += field[i];
-                } else {
-                    value -= field[i] - 10;
+            if (field[i] >= 0) {
+                if (field[i] >= 16) { //o
+                    if(i == 4) value += -90;
+                    else if((i & 1) == 0) value += -30;
+                    value += -100;//field[i];
+                } else  { //x
+                    if(i == 4) value += 90;
+                    else if((i & 1) == 0) value += 30;
+                    value += 100; //field[i] + 16;
                 }
             }
         }
 
-        return max ? value : -value;
+        return playerX ? -value : value;
     }
 
     public boolean terminal(byte[] current, boolean firstPlayer) {
@@ -135,11 +157,13 @@ public class CompetitionAI extends PenguAI {
                     || (current[2] & 48) == d && (current[6] & 48) == d
                     || (current[3] & 48) == d && (current[5] & 48) == d) return true;
 
-        } else if ((current[0] & 48) == d) {
+        }
+        if ((current[0] & 48) == d) {
             if ((current[3] & 48) == d && (current[6] & 48) == d
                     || (current[1] & 48) == d && (current[2] & 48) == d) return true;
 
-        } else if ((current[8] & 48) == d) {
+        }
+        if ((current[8] & 48) == d) {
             if ((current[6] & 48) == d && (current[7] & 48) == d
                     || (current[2] & 48) == d && (current[5] & 48) == d) return true;
         }
@@ -147,8 +171,9 @@ public class CompetitionAI extends PenguAI {
         return false;
     }
 
-    private List<byte[]> getChildren(byte[] current, boolean currentPlayer) {
-        List<byte[]> children = new ArrayList<>(20);
+    public byte[][] getChildren(byte[] current, boolean currentPlayer) {
+        byte[][] children = new byte[81][];
+        int ptr = 0;
 
         if(currentPlayer) {
             for (int i = 0; i < 9; i++) {
@@ -157,16 +182,16 @@ public class CompetitionAI extends PenguAI {
                         if(current[9 + j] != 0) continue;
                         byte[] child = copy(current);
                         child[i] = j;
-                        child[i + 9] = 1;
-                        children.add(child);
+                        child[j + 9] = 1;
+                        children[ptr++] = child;
                     }
                 } else if(current[i] >= 16) {
                     for(byte j = (byte) (current[i] + 1); j <= 24; j++) {
                         if(current[9 + j - 16] != 0) continue;
                         byte[] child = copy(current);
                         child[i] = (byte) (j - 16);
-                        child[i + 9] = 1;
-                        children.add(child);
+                        child[j - 16 + 9] = 1;
+                        children[ptr++] = child;
                     }
                 }
             }
@@ -177,16 +202,16 @@ public class CompetitionAI extends PenguAI {
                         if(current[j + 2] != 0) continue;
                         byte[] child = copy(current);
                         child[i] = j;
-                        child[i + 16] = 1;
-                        children.add(child);
+                        child[j - 16 + 18] = 1;
+                        children[ptr++] = child;
                     }
                 } else if(current[i] < 16) {
                     for(byte j = (byte) (current[i] + 1); j <= 8; j++) {
                         if(current[j + 18] != 0) continue;
                         byte[] child = copy(current);
                         child[i] = (byte) (j + 16);
-                        child[i + 16] = 1;
-                        children.add(child);
+                        child[j + 18] = 1;
+                        children[ptr++] = child;
                     }
                 }
             }
@@ -196,6 +221,8 @@ public class CompetitionAI extends PenguAI {
     }
 
     private Move getMove(byte[] current, byte[] next) {
+        if(next == null) return null;
+
         Move m = null;
         for(int i = 0; i < 9; i++) {
             if(current[i] != next[i]) {

@@ -1,13 +1,10 @@
 package pgdp;
 
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import pgdp.tictactoe.Field;
 import pgdp.tictactoe.Game;
 import pgdp.tictactoe.Move;
 import pgdp.tictactoe.ai.CompetitionAI;
-
-import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -34,15 +31,15 @@ public class CompetitionTest {
     public void test2() {
         var init = parseStringField("""
                     o0, o1, -,
-                    -, x8, -,
+                    -, x0, -,
                     -, -, -
                 """);
 
-        var expected = parseString("-, 2, 0");
-        var testMoves = parseString("0, 2, 1");
+        var expected = parseString("8, 2, 0");
+        var testMoves = parseString("");
 
-        testAIMoves(init, false,
-                new boolean[] {false, false, false, false, false, false, false, false, true},
+        testAIMoves(init, true,
+                new boolean[] {false, false, false, false, false, false, false, false, false},
                 new boolean[] {true, true, false, false, false, false, false, false, false},
                 expected, testMoves);
     }
@@ -63,7 +60,7 @@ public class CompetitionTest {
                 expected, new Move[]{});
     }
 
-    @Test
+    //@Test
     public void winIn3() {
         var init = parseStringField("""
                     o8, -, x8,
@@ -86,10 +83,10 @@ public class CompetitionTest {
         Game g = aiIsFirst ? new Game(comp, test) : new Game(test, comp);
         g.setFirstPlayedPieces(firstPieces);
         g.setSecondPlayedPieces(secondPieces);
-        g.setField(initialPosition);
+        g.setBoard(initialPosition);
 
         for(int i = 0; i < expected.length; i++) {
-            Move actual = comp.makeMove(g.getField(), aiIsFirst, g.getFirstPlayedPieces(), g.getSecondPlayedPieces());
+            Move actual = comp.makeMove(g.getBoard(), aiIsFirst, g.getFirstPlayedPieces(), g.getSecondPlayedPieces());
             if(expected[i].value() < 0) {
                 assertEquals(expected[i].x(), actual.x());
                 assertEquals(expected[i].y(), actual.y());

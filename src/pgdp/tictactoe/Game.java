@@ -1,12 +1,12 @@
 package pgdp.tictactoe;
 
 import pgdp.tictactoe.ai.CompetitionAI;
-import pgdp.tictactoe.ai.HumanPlayer;
-import pgdp.tictactoe.ai.SimpleAI;
+
+import java.util.Random;
 
 public class Game {
 
-    private Field[][] field = new Field[3][3];
+    public Field[][] board = new Field[3][3];
 
     public boolean[] getFirstPlayedPieces() {
         return firstPlayedPieces;
@@ -36,57 +36,98 @@ public class Game {
     }
 
     public void playGame() {
-        while(this.winner == null) {
+        while(this.winner == null && !checkForDraw()) {
             this.step();
         }
     }
 
-    public void setField(Field[][] field) {
-        this.field = field;
+    public void setBoard(Field[][] board) {
+        this.board = board;
     }
 
-    public Field[][] getField() {
-        return this.field;
+    public Field[][] getBoard() {
+        return this.board;
     }
 
-    public void step() {
-        validate(true, first.makeMove(field, true, firstPlayedPieces, secondPlayedPieces));
-        if(this.winner != null) return;
-        printBoard(field);
+    public void step() { //TODO: draw when no moves
+        validate(true, first.makeMove(board, true, firstPlayedPieces, secondPlayedPieces));
+        if(this.winner != null) {
+            System.out.println("invalid move");
+            return;
+        }
+        printBoard(board);
 
-        this.winner = checkForWinner();
+        this.winner = checkForWinner(false);
         if(this.winner != null) return;
 
-        validate(false, second.makeMove(field, false, firstPlayedPieces, secondPlayedPieces));
-        if(this.winner != null) return;
-        printBoard(field);
+        validate(false, second.makeMove(board, false, firstPlayedPieces, secondPlayedPieces));
+        if(this.winner != null) {
+            System.out.println("invalid move");
+            return;
+        }
 
-        this.winner = checkForWinner();
+        printBoard(board);
+
+        this.winner = checkForWinner(true);
     }
 
-    private PenguAI checkForWinner() {
-        for(int i = 0; i < 3; i++) if(field[i][0] != null && field[i][1] != null && field[i][2] != null && field[i][0].firstPlayer() == field[i][1].firstPlayer() && field[i][1].firstPlayer() == field[i][2].firstPlayer())
-            return field[i][0].firstPlayer() ? first : second;
-        for(int i = 0; i < 3; i++) if(field[0][i] != null && field[1][i] != null && field[2][i] != null && field[0][i].firstPlayer() == field[1][i].firstPlayer() && field[1][i].firstPlayer() == field[2][i].firstPlayer())
-            return field[0][i].firstPlayer() ? first : second;
-        if(field[0][0] != null && field[1][1] != null && field[2][2] != null && field[0][0].firstPlayer() == field[1][1].firstPlayer() && field[1][1].firstPlayer() == field[2][2].firstPlayer())
-            return field[0][0].firstPlayer() ? first : second;
-        if(field[0][2] != null && field[1][1] != null && field[2][0] != null && field[0][2].firstPlayer() == field[1][1].firstPlayer() && field[1][1].firstPlayer() == field[2][0].firstPlayer())
-            return field[0][2].firstPlayer() ? first : second;
+    private PenguAI checkForWinner(boolean firstPlayer) {
+        if(checkForCantMove(firstPlayer)) return firstPlayer ? second : first;
+
+        for(int i = 0; i < 3; i++) if(board[i][0] != null && board[i][1] != null && board[i][2] != null && board[i][0].firstPlayer() == board[i][1].firstPlayer() && board[i][1].firstPlayer() == board[i][2].firstPlayer())
+            return board[i][0].firstPlayer() ? first : second;
+        for(int i = 0; i < 3; i++) if(board[0][i] != null && board[1][i] != null && board[2][i] != null && board[0][i].firstPlayer() == board[1][i].firstPlayer() && board[1][i].firstPlayer() == board[2][i].firstPlayer())
+            return board[0][i].firstPlayer() ? first : second;
+        if(board[0][0] != null && board[1][1] != null && board[2][2] != null && board[0][0].firstPlayer() == board[1][1].firstPlayer() && board[1][1].firstPlayer() == board[2][2].firstPlayer())
+            return board[0][0].firstPlayer() ? first : second;
+        if(board[0][2] != null && board[1][1] != null && board[2][0] != null && board[0][2].firstPlayer() == board[1][1].firstPlayer() && board[1][1].firstPlayer() == board[2][0].firstPlayer())
+            return board[0][2].firstPlayer() ? first : second;
         return null;
     }
 
+    private boolean checkForDraw() {
+        for(int i = 0; i < 9; i++){
+            if(!firstPlayedPieces[i] || !secondPlayedPieces[i])
+                return false;
+        }
+
+        return true;
+    }
+
+    private boolean checkForCantMove(boolean firstPlayer) {
+        int highest = -1;
+        for(int i = 8; i >= 0; i--) {
+            if(!(firstPlayer ? firstPlayedPieces[i] : secondPlayedPieces[i])) {
+                highest = i;
+                break;
+            }
+        }
+
+        for(int i = 0; i < 9; i++){
+            Field f = board[i / 3][i % 3];
+            if(f == null) return false;
+            if(f.firstPlayer() != firstPlayer && f.value() < highest) return false;
+        }
+
+        return true;
+    }
+
     private void validate(boolean first, Move move) {
+        if(move == null) {
+            this.winner = first ? this.second : this.first;
+            return;
+        }
+
         if(move.x() < 0 || move.x() >= 3 || move.y() < 0 || move.y() >= 3
                 || move.value() < 0 || move.value() >= 9
                 || (first && firstPlayedPieces[move.value()])
                 || (!first && secondPlayedPieces[move.value()])
-                || field[move.x()][move.y()] != null && field[move.x()][move.y()].firstPlayer() == first
-                || field[move.x()][move.y()] != null && field[move.x()][move.y()].value() >= move.value()) {
+                || board[move.x()][move.y()] != null && board[move.x()][move.y()].firstPlayer() == first
+                || board[move.x()][move.y()] != null && board[move.x()][move.y()].value() >= move.value()) {
             //invalid
             this.winner = first ? this.second : this.first;
         } else {
-            field[move.x()][move.y()] = new Field(move.value(), first);
+            board[move.x()][move.y()] = new Field(move.value(), first);
             if(first) {
                 firstPlayedPieces[move.value()] = true;
             } else {
@@ -119,14 +160,18 @@ public class Game {
     }
 
     public static void main(String[] args) {
-        PenguAI firstPlayer = new CompetitionAI();
-        PenguAI secondPlayer = new HumanPlayer();
+        PenguAI firstPlayer = new CompetitionAI(6);
+        PenguAI secondPlayer = new CompetitionAI(6);
+
+        //tournament(firstPlayer, secondPlayer);
+
         Game game = new Game(firstPlayer, secondPlayer);
-        game.setFirstPlayedPieces(new boolean[] {false, false, false, false, false, false, false, false, true});
-        game.setSecondPlayedPieces(new boolean[] {false, false, false, false, false, false, false, false, true});
-        game.field[0][0] = new Field(8, true);
-        game.field[2][0] = new Field(8, false);
+
+
+        long t1 = System.nanoTime();
         game.playGame();
+
+        System.out.println("Time taken: " + (System.nanoTime() - t1) / 1000000 + "ms");
 
         if(firstPlayer == game.getWinner()) {
             System.out.println("Herzlichen Glückwunsch erster Spieler");
@@ -138,4 +183,33 @@ public class Game {
     }
 
 
+    private static void tournament(PenguAI x, PenguAI o) {
+        int winX = 0;
+        int winO = 0;
+        int draw = 0;
+
+        for(int i = 0; i < 50; i++) {
+            Random r = new Random(i / 2);
+            Game game = (i % 2 == 0) ?  new Game(x, o) :  new Game(o, x);
+            //random move
+
+            int f = r.nextInt(9);
+            int v = r.nextInt(9);
+
+            game.board[f / 3][f % 3] = new Field(v, true);
+
+            game.playGame();
+
+            if (x == game.getWinner()) {
+                winX++;
+            } else if (o == game.getWinner()) {
+                winO++;
+            } else {
+                draw++;
+            }
+        }
+
+        System.out.println("Played " + (winO + winX + draw) + " games.");
+        System.out.println("x wins: " + winX + ", o wins: " + winO + ", draws: " + draw);
+    }
 }

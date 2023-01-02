@@ -15,7 +15,7 @@ public class TestAI extends PenguAI {
 
     @Override
     public Move makeMove(Field[][] board, boolean firstPlayer, boolean[] firstPlayedPieces, boolean[] secondPlayedPieces) {
-        if(moves == null || index >= moves.length) throw new ArrayIndexOutOfBoundsException("Called PenguAI.makeMove after game was already finished");
+        if(index >= moves.length) throw new ArrayIndexOutOfBoundsException("Called PenguAI.makeMove after game was already finished");
         return moves[index++];
     }
 

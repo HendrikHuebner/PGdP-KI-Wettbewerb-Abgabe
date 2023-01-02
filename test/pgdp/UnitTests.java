@@ -5,12 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
-import java.util.InputMismatchException;
 import java.util.stream.Stream;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -19,7 +16,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import pgdp.tictactoe.Field;
 import pgdp.tictactoe.Game;
 import pgdp.tictactoe.Move;
-import pgdp.tictactoe.ai.SimpleAI;
 
 public class UnitTests {
 
@@ -104,6 +100,27 @@ public class UnitTests {
         );
     }
 
+    @ParameterizedTest
+    @MethodSource
+    @DisplayName("Should be able to handle invalid moves")
+    public void moveAlreadyUsedTest(Move[] movesX, Move[] movesO, boolean firstWon) {
+        runTest(movesX, movesO, firstWon);
+    }
+
+    public static Stream<Arguments> moveAlreadyUsedTest() {
+        Move[] move1 = parseString("5, 0, 0");
+        Move[] invalid1 = parseString("0, 0, 0");
+        Move[] invalid2 = parseString("5, 0, 0");
+        Move[] invalid3 = parseString("0, 1, 0, 0, 1, 0");
+        Move[] invalid4 = parseString("0, 1, 0, 8, 1, 0");
+
+        return Stream.of(
+                arguments(move1, invalid1, true),
+                arguments(move1, invalid2, true),
+                arguments(invalid3, move1, false),
+                arguments(invalid4, move1, false)
+        );
+    }
 
     /**
      * If !expectedWinner there has to be at least one O on the board
@@ -124,7 +141,7 @@ public class UnitTests {
                 Field f = init[i / 3][i % 3];
                 if(f != null && f.firstPlayer()) {
                     moveO = new Move(i / 3, i % 3, f.value());
-                    f = null;
+                    init[i / 3][i % 3] = null;
                     break;
                 }
             }
@@ -161,7 +178,7 @@ public class UnitTests {
         TestAI X = new TestAI(movesX);
         TestAI O = new TestAI(movesO);
         Game g = new Game(X, O);
-        if(init != null)g.setField(init);
+        if(init != null)g.setBoard(init);
         g.playGame();
 
         assertEquals(firstWon ? X : O, g.getWinner());
