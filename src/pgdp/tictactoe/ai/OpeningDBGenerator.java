@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 
 public class OpeningDBGenerator {
 
-    public static final String PATH = "opening_db.txt";
+    public static final String PATH = "src/pgdp/tictactoe/opening_db.txt";
 
     public static void main(String[] args) throws InterruptedException {
         Map<PositionWrapper, PositionInfo> db = Collections.synchronizedMap(new HashMap<>());
@@ -123,6 +123,9 @@ public class OpeningDBGenerator {
         Map<PositionWrapper, PositionInfo> db = null;
 
         try {
+            File f = new File(PATH);
+            System.out.println(f.getAbsolutePath());
+            System.out.println(f.getPath());
             FileInputStream fileInputStream = new FileInputStream(PATH);
             ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
             db = (Map<PositionWrapper, PositionInfo>) objectInputStream.readObject();
