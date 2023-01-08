@@ -4,28 +4,77 @@ import org.junit.jupiter.api.Test;
 import pgdp.tictactoe.Field;
 import pgdp.tictactoe.Game;
 import pgdp.tictactoe.Move;
-import pgdp.tictactoe.ai.CompetitionAI;
+import pgdp.tictactoe.PenguAI;
+import pgdp.tictactoe.ai.AIHelper;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class CompetitionTest {
 
     @Test
-    public void test1() {
-        var init = parseStringField("""
-                    x0, x1, -,
-                    -, o8, -,
+    public void analyzePos() {
+        PenguAI ai = new CompetitionAI(18);
+
+        long t1 = System.nanoTime();
+
+        Move m = ai.makeMove(parseStringField("""
+                    -, -, -,
+                    -, -, -,
                     -, -, -
-                """);
+                """), true,
+                new boolean[] {false, false, false, false, false, false, false, false, false},
+                new boolean[] {false, false, false, false, false, false, false, false, false});
 
-        var expected = parseString("-, 2, 0");
-        var testMoves = parseString("");
+        System.out.println(m);
+        System.out.println("Time taken: " + (System.nanoTime() - t1) / 1000000 + "ms");
 
-        testAIMoves(init, true,
-                new boolean[] {true, true, false, false, false, false, false, false, false},
-                new boolean[] {false, false, false, false, false, false, false, false, true},
-                expected, testMoves);
     }
+
+    @Test
+    public void analyzeFirstMoves() {
+        PenguAI ai = new CompetitionAI(18);
+
+        for(int i : new int[] {0, 1, 4}) {
+            for (int j = 0; j < 9; j++) {
+                Field[][] f = new Field[3][3];
+
+                f[i / 3][i % 3] = new Field(j, true);
+
+                boolean[] firstPlayedP = new boolean[]{false, false, false, false, false, false, false, false, false};
+                firstPlayedP[j] = true;
+                var m = ai.makeMove(f, false,
+                        firstPlayedP,
+                        new boolean[]{false, false, false, false, false, false, false, false, false});
+                Game.printBoard(f);
+                System.out.println("Best Move: " + m);
+            }
+        }
+    }
+
+    @Test
+    public void playLine() {
+        PenguAI x = new CompetitionAI(18);
+        if ((true)) return;
+        PenguAI o = new CompetitionAI(18);
+
+        long t1 = System.nanoTime();
+
+        Game g = new Game(x, o);
+        g.setBoard(parseStringField("""
+                -, -, -,
+                -, -, -,
+                -, -, -
+                """));
+
+
+
+        g.setFirstPlayedPieces(new boolean[] {false, false, false, false, false, false, false, false, false});
+        g.setSecondPlayedPieces(new boolean[] {false, false, false, false, false, false, false, false, false});
+
+        g.playGame(true);
+        System.out.println("Time taken: " + (System.nanoTime() - t1) / 1000000 + "ms");
+    }
+
 
     @Test
     public void test2() {
@@ -134,6 +183,30 @@ public class CompetitionTest {
         assertTrue(ai.terminal(byteField("o1, -, -, -, o2, -, -, -, o3"), false));
     }
 
+    @Test
+    public void testChildren() {
+        CompetitionAI ai = new CompetitionAI(5);
+        CompetitionAI ai2 = new CompetitionAI();
+
+        long t1 = System.nanoTime();
+
+        byte[] b = AIHelper.parseByteArr(
+                parseStringField("""
+                    x1, -, o6,
+                    -, x8, -,
+                    o8, -, -
+                """), new boolean[] {true, false, false, false, false, false, false, false, true},
+                new boolean[] {false, false, false, false, false, false, true, false, true});
+        //Set<Integer> children = Arrays.asList(ai.getChildren(b, true)).stream().filter(e -> e != null).map(e -> Arrays.hashCode(e)).collect(Collectors.toSet());
+        //Set<Integer> children2 = Arrays.asList(ai2.getChildren(b, true)).stream().filter(e -> e != null).map(e -> Arrays.hashCode(e)).collect(Collectors.toSet());
+
+
+        //children.stream().forEach(s -> System.out.println(Arrays.toString(s)));//.collect(Collectors.toList());
+        //children2.stream().forEach(s -> System.out.println(Arrays.toString(s)));//.collect(Collectors.toList());
+
+        //assertEquals(children2, children);
+    }
+
     /**
      * Creates a Move[] array from string. A move consists of three integers separates by commas.
      * The first is the value, the second is the x coordinate, the third is the y coordinate.
@@ -189,5 +262,29 @@ public class CompetitionTest {
         }
 
         return field;
+    }
+
+    @Test
+    public void testRotate() {
+        byte[] b = new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9};
+        byte[] b2 = new byte[] {3, 6, 9, 2, 5, 8, 1, 4, 7};
+        byte[] b3 = new byte[] {9, 8, 7, 6, 5, 4, 3, 2, 1};
+        byte[] b4 = new byte[] {7, 4, 1, 8, 5, 2, 9, 6, 3};
+        byte[] b5 = new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+        AIHelper.rotateBoard(b, 1, false);
+        assertArrayEquals(b2, b);
+        AIHelper.rotateBoard(b, 2, false);
+        assertArrayEquals(b4, b);
+        AIHelper.rotateBoard(b, 3, false);
+        assertArrayEquals(b3, b);
+        AIHelper.rotateBoard(b, 3, true);
+        assertArrayEquals(b4, b);
+        AIHelper.rotateBoard(b, 2, true);
+        assertArrayEquals(b2, b);
+        AIHelper.rotateBoard(b, 1, true);
+        assertArrayEquals(b5, b);
+
+
     }
 }

@@ -1,8 +1,5 @@
 package pgdp.tictactoe;
 
-import pgdp.tictactoe.ai.CompetitionAI;
-import pgdp.tictactoe.ai.HumanPlayer;
-
 import java.util.Random;
 
 public class Game {
@@ -176,7 +173,7 @@ public class Game {
         System.out.println("┗━━━┻━━━┻━━━┛");
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) {/*
         PenguAI firstPlayer = new CompetitionAI();
         PenguAI secondPlayer = new CompetitionAI();
 
@@ -196,7 +193,7 @@ public class Game {
             System.out.println("Herzlichen Glückwunsch zweiter Spieler");
         } else {
             System.out.println("Unentschieden");
-        }
+        }*/
     }
 
 
