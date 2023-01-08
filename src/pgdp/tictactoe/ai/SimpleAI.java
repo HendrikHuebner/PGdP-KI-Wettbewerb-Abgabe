@@ -1,11 +1,8 @@
-package pgdp.tictactoe;
+package pgdp.tictactoe.ai;
 
 import java.util.Random;
 
-import pgdp.tictactoe.Field;
-import pgdp.tictactoe.Game;
-import pgdp.tictactoe.Move;
-import pgdp.tictactoe.PenguAI;
+import pgdp.tictactoe.*;
 
 public class SimpleAI extends PenguAI {
 
