@@ -73,6 +73,7 @@ public class OpeningDBGenerator {
         pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
         System.out.println("dbsize: " + db.size());
 
+        /*
 
         try {
             FileOutputStream myFileOutStream = new FileOutputStream("db1.txt");
@@ -84,7 +85,7 @@ public class OpeningDBGenerator {
         }
         catch (IOException e) {
             e.printStackTrace();
-        }
+        }*/
 
 
         Map<PositionWrapper, PositionInfo> newTable = new HashMap<>();
@@ -126,15 +127,13 @@ public class OpeningDBGenerator {
         Map<PositionWrapper, PositionInfo> db = null;
 
         try {
-            URL resource = OpeningDBGenerator.class.getClassLoader().getResource("opening_db.txt");
-            File f = new File(resource.toURI());
+            //URL resource = OpeningDBGenerator.class.getClassLoader().getResource("opening_db.txt");
+            File f = new File("assignment/src/main/resources");
             FileInputStream fileInputStream = new FileInputStream(f);
             ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
             db = (Map<PositionWrapper, PositionInfo>) objectInputStream.readObject();
             objectInputStream.close();
         } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (URISyntaxException e) {
             e.printStackTrace();
         }
 
