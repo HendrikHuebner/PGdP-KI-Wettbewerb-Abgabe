@@ -4,6 +4,9 @@ import pgdp.tictactoe.Field;
 import pgdp.tictactoe.PenguAI;
 
 import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -123,14 +126,15 @@ public class OpeningDBGenerator {
         Map<PositionWrapper, PositionInfo> db = null;
 
         try {
-            File f = new File(PATH);
-            System.out.println(f.getAbsolutePath());
-            System.out.println(f.getPath());
-            FileInputStream fileInputStream = new FileInputStream(PATH);
+            URL resource = OpeningDBGenerator.class.getClassLoader().getResource("opening_db.txt");
+            File f = new File(resource.toURI());
+            FileInputStream fileInputStream = new FileInputStream(f);
             ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
             db = (Map<PositionWrapper, PositionInfo>) objectInputStream.readObject();
             objectInputStream.close();
         } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (URISyntaxException e) {
             e.printStackTrace();
         }
 
