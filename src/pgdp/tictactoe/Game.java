@@ -173,7 +173,9 @@ public class Game {
         System.out.println("┗━━━┻━━━┻━━━┛");
     }
 
-    public static void main(String[] args) {/*
+    public static void main(String[] args) {
+
+        /*
         PenguAI firstPlayer = new CompetitionAI();
         PenguAI secondPlayer = new CompetitionAI();
 
