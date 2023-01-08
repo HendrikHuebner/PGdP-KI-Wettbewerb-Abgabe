@@ -43,9 +43,8 @@ public class CompetitionAI extends PenguAI {
 
         //hardcode first move
         if(AIHelper.getHalfMove(current) == 0 && firstPlayer) {
-            //Random r = new Random();
-            //return new Move[] {new Move(1, 1, 8)}[r.nextInt(3)];
-            return new Move(1, 1, 8);
+            Random r = new Random();
+            return new Move[] {new Move(1, 1, 8), new Move(0, 0, 4), new Move(2, 2, 0)}[r.nextInt(3)];
         }
 
 

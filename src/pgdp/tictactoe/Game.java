@@ -181,9 +181,9 @@ public class Game {
         PenguAI ai1 = new CompetitionAI();
         PenguAI ai2 = new CompetitionAI();
         Game g = new Game(ai1, ai2);
-        g.getBoard()[0][0] = new Field(8, true);
-        g.getFirstPlayedPieces()[8] = true;
-        g.playGame(false);
+        //g.getBoard()[2][2] = new Field(0, true);
+        //g.getFirstPlayedPieces()[0] = true;
+        g.playGame(true);
 
 
         if(true) return;
