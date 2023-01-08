@@ -128,7 +128,7 @@ public class OpeningDBGenerator {
 
         try {
             //URL resource = OpeningDBGenerator.class.getClassLoader().getResource("opening_db.txt");
-            FileInputStream fileInputStream = new FileInputStream("assignment/src/opening_db.txt");
+            FileInputStream fileInputStream = new FileInputStream("assignment/src/main/resources/opening_db.txt");
             ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
             db = (Map<PositionWrapper, PositionInfo>) objectInputStream.readObject();
             objectInputStream.close();
