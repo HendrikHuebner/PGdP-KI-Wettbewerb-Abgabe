@@ -1,7 +1,5 @@
 package pgdp.tictactoe.ai;
 
-import java.util.Random;
-
 import pgdp.tictactoe.*;
 
 public class SimpleAI extends PenguAI {

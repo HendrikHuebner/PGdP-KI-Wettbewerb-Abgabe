@@ -1,4 +1,4 @@
-package pgdp.tictactoe;
+package pgdp.tictactoe.ai;
 
 import pgdp.tictactoe.Field;
 import pgdp.tictactoe.Move;
@@ -21,13 +21,15 @@ public class CompetitionAI extends PenguAI {
     private long statesSearched = 0;
     private boolean checkSymmetric = true;
     private int boardRotation = 0;
-    private Map<PositionWrapper, PositionInfo> openingTable;
+    private static Map<PositionWrapper, PositionInfo> openingTable;
 
     public CompetitionAI(int maxDepth, boolean useDb) {
         this.maxDepth = maxDepth;
 
         this.useDb = useDb;
-        if(useDb) this.openingTable = OpeningDBGenerator.readDB();
+        long t1 = System.currentTimeMillis();
+        if(useDb && openingTable == null) this.openingTable = OpeningDBGenerator.readDB();
+        System.out.println(System.currentTimeMillis() - t1);
     }
 
     public CompetitionAI() {

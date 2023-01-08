@@ -1,6 +1,6 @@
 package pgdp.tictactoe;
 
-import pgdp.tictactoe.ai.HumanPlayer;
+import pgdp.tictactoe.ai.CompetitionAI;
 
 import java.util.Random;
 
