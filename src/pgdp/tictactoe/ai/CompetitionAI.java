@@ -41,6 +41,14 @@ public class CompetitionAI extends PenguAI {
         long prevSearched = this.statesSearched;
         byte[] current = parseByteArr(board, firstPlayedPieces, secondPlayedPieces);
 
+        //hardcode first move
+        if(AIHelper.getHalfMove(current) == 0 && firstPlayer) {
+            //Random r = new Random();
+            //return new Move[] {new Move(1, 1, 8)}[r.nextInt(3)];
+            return new Move(1, 1, 8);
+        }
+
+
         PositionInfo positionInfo = alphaBeta(current, maxDepth, -99999, 99999, true, firstPlayer);
 
         //LOG

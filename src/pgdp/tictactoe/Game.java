@@ -1,6 +1,8 @@
 package pgdp.tictactoe;
 
+import pgdp.tictactoe.ai.AIHelper;
 import pgdp.tictactoe.ai.CompetitionAI;
+import pgdp.tictactoe.ai.DBInitializingAI;
 
 import java.util.Random;
 
@@ -176,25 +178,33 @@ public class Game {
     }
 
     public static void main(String[] args) {
-        PenguAI firstPlayer = new CompetitionAI();
-        PenguAI secondPlayer = new CompetitionAI();
+        PenguAI ai1 = new CompetitionAI();
+        PenguAI ai2 = new CompetitionAI();
+        Game g = new Game(ai1, ai2);
+        g.getBoard()[0][0] = new Field(8, true);
+        g.getFirstPlayedPieces()[8] = true;
+        g.playGame(false);
 
-        //tournament(firstPlayer, secondPlayer);
 
-        Game game = new Game(firstPlayer, secondPlayer);
+        if(true) return;
+        for(int i : new int[] {0, 1, 4}) {
+            for(int j = 0; j < 9; j++) {
+                final int ii = i;
+                final int jj = j;
 
+                Field[][] f = new Field[3][3];
+                PenguAI ai = new CompetitionAI();
+                f[ii / 3][ii % 3] = new Field(jj, true);
 
-        long t1 = System.nanoTime();
-        game.playGame();
+                boolean[] firstPlayedP = new boolean[] {false, false, false, false, false, false, false, false, false};
+                firstPlayedP[jj] = true;
+                var m = ai.makeMove(f, false,
+                        firstPlayedP,
+                        new boolean[] {false, false, false, false, false, false, false, false, false});
 
-        System.out.println("Time taken: " + (System.nanoTime() - t1) / 1000000 + "ms");
-
-        if(firstPlayer == game.getWinner()) {
-            System.out.println("Herzlichen Glückwunsch erster Spieler");
-        } else if(secondPlayer == game.getWinner()) {
-            System.out.println("Herzlichen Glückwunsch zweiter Spieler");
-        } else {
-            System.out.println("Unentschieden");
+                printBoard(f);
+                System.out.println(m);
+            }
         }
     }
 

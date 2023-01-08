@@ -57,14 +57,6 @@ public class OpeningDBGenerator {
                     }
 
                     System.out.println("tested move " + f[ii / 3][ii % 3] + " map size: " + db.size());
-
-                    try {
-                        System.out.println("start");
-                        Thread.sleep(100);
-                        System.out.println("slept");
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
                 });
             }
         }
@@ -127,12 +119,17 @@ public class OpeningDBGenerator {
         Map<PositionWrapper, PositionInfo> db = null;
 
         try {
-            //URL resource = OpeningDBGenerator.class.getClassLoader().getResource("opening_db.txt");
-            FileInputStream fileInputStream = new FileInputStream("assignment/src/main/resources/opening_db.txt");
+
+            //FIXME: Danke <3
+            URL resource = OpeningDBGenerator.class.getClassLoader().getResource("opening_db.txt");
+            FileInputStream fileInputStream = new FileInputStream(new File(resource.toURI()));
+
             ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
             db = (Map<PositionWrapper, PositionInfo>) objectInputStream.readObject();
             objectInputStream.close();
         } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (URISyntaxException e) {
             e.printStackTrace();
         }
 
