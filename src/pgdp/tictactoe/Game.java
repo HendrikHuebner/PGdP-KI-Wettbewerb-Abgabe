@@ -175,7 +175,7 @@ public class Game {
 
     public static void main(String[] args) {
 
-        /*
+
         PenguAI firstPlayer = new CompetitionAI();
         PenguAI secondPlayer = new CompetitionAI();
 
@@ -195,7 +195,7 @@ public class Game {
             System.out.println("Herzlichen Glückwunsch zweiter Spieler");
         } else {
             System.out.println("Unentschieden");
-        }*/
+        }
     }
 
 
