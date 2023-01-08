@@ -70,6 +70,20 @@ public class OpeningDBGenerator {
         pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
         System.out.println("dbsize: " + db.size());
 
+
+        try {
+            FileOutputStream myFileOutStream = new FileOutputStream("db1.txt");
+            ObjectOutputStream myObjectOutStream = new ObjectOutputStream(myFileOutStream);
+            myObjectOutStream.writeObject(db);
+
+            myObjectOutStream.close();
+            myFileOutStream.close();
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
         Map<PositionWrapper, PositionInfo> newTable = new HashMap<>();
 
         for(var e : db.entrySet()) {
@@ -92,7 +106,7 @@ public class OpeningDBGenerator {
         }
 
         try {
-            FileOutputStream myFileOutStream = new FileOutputStream(PATH);
+            FileOutputStream myFileOutStream = new FileOutputStream("opening_db.txt");
             ObjectOutputStream myObjectOutStream = new ObjectOutputStream(myFileOutStream);
             myObjectOutStream.writeObject(newTable);
 

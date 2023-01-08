@@ -89,4 +89,3 @@ out
 # Gradle
 .gradle
 !gradle/wrapper/gradle-wrapper.jar
-opening_db.txt

@@ -6,7 +6,7 @@ import pgdp.tictactoe.*;
 
 public class SimpleAI extends PenguAI {
 
-    private CompetitionAI ai = new CompetitionAI(2);
+    private CompetitionAI ai = new CompetitionAI(2, false);
 
     public SimpleAI() {}
 

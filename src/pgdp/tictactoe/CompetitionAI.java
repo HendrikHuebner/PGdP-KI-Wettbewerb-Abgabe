@@ -17,19 +17,21 @@ import static pgdp.tictactoe.ai.AIHelper.*;
 public class CompetitionAI extends PenguAI {
 
     private final int maxDepth;
+    private final boolean useDb;
     private long statesSearched = 0;
     private boolean checkSymmetric = true;
     private int boardRotation = 0;
     private Map<PositionWrapper, PositionInfo> openingTable;
 
-    public CompetitionAI(int maxDepth) {
+    public CompetitionAI(int maxDepth, boolean useDb) {
         this.maxDepth = maxDepth;
 
-        this.openingTable = OpeningDBGenerator.readDB();
+        this.useDb = useDb;
+        if(useDb) this.openingTable = OpeningDBGenerator.readDB();
     }
 
     public CompetitionAI() {
-        this(18);
+        this(18, true);
     }
 
     @Override
@@ -55,7 +57,8 @@ public class CompetitionAI extends PenguAI {
     private PositionInfo alphaBeta(byte[] current, int depth, int alpha, int beta, boolean max, boolean playerX) {
         this.statesSearched++;
 
-        if(depth >= 12) {
+
+        if(useDb && depth >= 12) {
             PositionInfo info = this.openingTable.get(new PositionWrapper(current));
             if(info != null) return info;
         }
@@ -103,7 +106,28 @@ public class CompetitionAI extends PenguAI {
                 }
             }
 
-            return new PositionInfo(null, draw ? 0 : -99999 + maxDepth - depth);
+            int resVal = -99999 + maxDepth - depth;
+            if(draw) {
+                int first = 0;
+                int second = 0;
+                for(int i = 0; i < 9; i++) {
+                    if(current[i] == -1) continue;
+                    if(current[i] >= 16) {
+                        second += current[i] - 16;
+                    } else {
+                        first += current[i];
+                    }
+                }
+
+                if(first == second) {
+                    resVal = 0;
+                } else if (first < second && max == playerX) {
+                    resVal = 99999 - maxDepth + depth;
+                }
+
+            }
+
+            return new PositionInfo(null, resVal);
         }
 
         return new PositionInfo(bestChild, value);

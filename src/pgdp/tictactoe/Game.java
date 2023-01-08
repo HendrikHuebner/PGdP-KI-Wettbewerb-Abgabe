@@ -1,5 +1,7 @@
 package pgdp.tictactoe;
 
+import pgdp.tictactoe.ai.HumanPlayer;
+
 import java.util.Random;
 
 public class Game {
@@ -174,18 +176,16 @@ public class Game {
     }
 
     public static void main(String[] args) {
-
-
         PenguAI firstPlayer = new CompetitionAI();
         PenguAI secondPlayer = new CompetitionAI();
 
-        tournament(firstPlayer, secondPlayer);
+        //tournament(firstPlayer, secondPlayer);
 
         Game game = new Game(firstPlayer, secondPlayer);
 
 
         long t1 = System.nanoTime();
-        //Game.playGame();
+        game.playGame();
 
         System.out.println("Time taken: " + (System.nanoTime() - t1) / 1000000 + "ms");
 
