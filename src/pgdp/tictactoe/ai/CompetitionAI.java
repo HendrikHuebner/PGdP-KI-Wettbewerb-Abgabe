@@ -4,108 +4,90 @@ import pgdp.tictactoe.Field;
 import pgdp.tictactoe.Move;
 import pgdp.tictactoe.PenguAI;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.*;
+
+import static pgdp.tictactoe.ai.AIHelper.*;
 
 public class CompetitionAI extends PenguAI {
 
-    private int movesPlayed = 0;
     private final int maxDepth;
-    private Map<PositionWrapper, Integer> transpositions = new HashMap<>();
-    private int duplicates = 0;
-
-    //DEBUG
-    private int statesSearched = 0;
+    private long statesSearched = 0;
+    private boolean checkSymmetric = true;
+    private int boardRotation = 0;
+    private Map<PositionWrapper, PositionInfo> openingTable;
 
     public CompetitionAI(int maxDepth) {
         this.maxDepth = maxDepth;
+
+        this.openingTable = OpeningDBGenerator.readDB();
     }
 
     public CompetitionAI() {
-        this.maxDepth = 5;
+        this(18);
     }
-
-    /**
-     * TODO:
-     * <p>
-     * Improve state heuristic function
-     * Ignore symmetric states
-     * Add iterative searching with increasing depth. cut off after 0.9s time limit
-     * Add transposition table(if needed!)
-     * Sort child states to increase pruning
-     * Opening table
-     */
-
 
     @Override
     public Move makeMove(Field[][] board, boolean firstPlayer, boolean[] firstPlayedPieces, boolean[] secondPlayedPieces) {
-        this.duplicates = 0;
-        //DEBUG
-        int prevSearched = this.statesSearched;
+        long prevSearched = this.statesSearched;
         byte[] current = parseByteArr(board, firstPlayedPieces, secondPlayedPieces);
 
-        int alpha = -99999;
-        int beta = 99999;
+        PositionInfo positionInfo = alphaBeta(current, maxDepth, -99999, 99999, true, firstPlayer);
 
-        Ret ret = alphaBeta(current, maxDepth, alpha, beta, true, firstPlayer);
-
-        //DEBUG
-        if(Math.abs(ret.value) > 9999) {
-            if(ret.value > 9999){
-                System.out.println("Evaluation: Win in " + (99999 - ret.value + 1));
+        //LOG
+        if(Math.abs(positionInfo.evaluation()) > 9999) {
+            if(positionInfo.evaluation() > 9999){
+                System.out.println("Evaluation: Win in " + (99999 - positionInfo.evaluation() + 1));
             } else {
-                System.out.println("Evaluation: Loss in " + (99999 + ret.value + 1));
+                System.out.println("Evaluation: Loss in " + (99999 + positionInfo.evaluation() + 1));
             }
-        }
-        else System.out.println("Evaluation: " + ret.value);
+        } else System.out.println("Evaluation: " + positionInfo.evaluation());
         System.out.println("States searched: " + (statesSearched - prevSearched));
-        movesPlayed++;
-        System.out.println("Positions checked: " + transpositions.size());
-        System.out.println("Duplicates: " + duplicates);
-        System.out.println("Percentage: " + (double)duplicates/(statesSearched - prevSearched));
-        return getMove(current, ret.moves[maxDepth - 1]);
+
+        return getMove(current, positionInfo.nextMove());
     }
 
-    private Ret alphaBeta(byte[] current, int depth, int alpha, int beta, boolean max, boolean playerX) {
+    private PositionInfo alphaBeta(byte[] current, int depth, int alpha, int beta, boolean max, boolean playerX) {
         this.statesSearched++;
 
-        if(maxDepth - depth <= 2) {
-
+        if(depth >= 12) {
+            PositionInfo info = this.openingTable.get(new PositionWrapper(current));
+            if(info != null) return info;
         }
 
         if (depth == 0) {
-            byte[][] arr = new byte[maxDepth][];
-            arr[0] = current;
-            return new Ret(heuristic(current, playerX), arr);
+            return new PositionInfo(null, heuristic(current, playerX));
         }
 
         int value = -99999;
         byte[] bestChild = null;
-        Ret bestRet = null;
+        PositionInfo bestPositionInfo = null;
 
-        for (var child : getChildren(current, max == playerX)) {
-            if(child == null) break;
+        var children = getChildren(current, max == playerX, depth);
+        for (var child : children) {
+            if(child == null) continue;
 
             if(terminal(child, max == playerX)) {
-                byte[][] arr = new byte[maxDepth][];
-                arr[depth - 1] = child;
-                return new Ret(99999 - maxDepth + depth, arr);
+                return new PositionInfo(child,99999 - maxDepth + depth);
             }
 
-            Ret r = alphaBeta(child, depth - 1, -beta, -alpha, !max, playerX);
+            PositionInfo r = alphaBeta(child, depth - 1, -beta, -alpha, !max, playerX);
 
-
-            if(-r.value > value) {
-                bestRet = r;
+            if(-r.evaluation() > value) {
+                bestPositionInfo = r;
                 bestChild = child;
-                value = -r.value;
+                value = -r.evaluation();
             }
 
             alpha = Math.max(alpha, value);
-            if (alpha >= beta) break;
-
+            if (alpha >= beta) {
+                break;
+            }
         }
 
-        if(bestRet == null) {
+        if(bestPositionInfo == null) {
             //no children
             byte[][] arr = new byte[maxDepth][];
             arr[depth - 1] = null;
@@ -118,16 +100,12 @@ public class CompetitionAI extends PenguAI {
                 }
             }
 
-            return new Ret(draw ? 0 : -99999 + maxDepth - depth, arr);
+            return new PositionInfo(null, draw ? 0 : -99999 + maxDepth - depth);
         }
 
-        var l = bestRet.moves();
-        l[depth - 1] = bestChild;
-        return new Ret(value, l);
-
+        return new PositionInfo(bestChild, value);
     }
 
-    private static record Ret(int value, byte[][] moves) {}
 
     private int heuristic(byte[] field, boolean playerX) {
         int value = 0;
@@ -171,9 +149,65 @@ public class CompetitionAI extends PenguAI {
         return false;
     }
 
-    public byte[][] getChildren(byte[] current, boolean currentPlayer) {
+    public byte[][] getChildren(byte[] current, boolean currentPlayer, int depth) {
         byte[][] children = new byte[81][];
-        int ptr = 0;
+
+        if(this.checkSymmetric) {
+            int numOfPieces = getNumberOfPieces(current);
+            if (numOfPieces > 1) {
+                this.checkSymmetric = false;
+            } else {
+
+                int[] toBeSearched;
+
+                if (numOfPieces == 0) {
+                    //only consider positions 0, 3, 4
+                    toBeSearched = new int[]{0, 3, 4};
+
+                } else {
+                    if (current[4] != -1) {
+                        //only consider 0, 3, 4
+                        toBeSearched = new int[]{0, 3, 4};
+                    } else if (current[0] != -1 || current[8] != -1) {
+                        //only consider 0, 1, 2, 4, 5, 8
+                        toBeSearched = new int[]{0, 1, 2, 4, 5, 8};
+                    } else if (current[2] != -1 || current[6] != -1) {
+                        //only consider 0, 1, 2, 3, 4, 6
+                        toBeSearched = new int[]{0, 1, 2, 3, 4, 6};
+                    } else if (current[1] != -1 || current[7] != -1) {
+                        //only consider 0, 1, 3, 4, 6, 7
+                        toBeSearched = new int[]{0, 1, 3, 4, 6, 7};
+                    } else /*if (current[3] != -1 || current[5] != -1)*/ {
+                        //only consider 0, 1, 2, 3, 4, 5
+                        toBeSearched = new int[]{0, 1, 2, 3, 4, 5};
+                    }
+                }
+
+                int ptr = 0;
+                for (int i : toBeSearched) {
+                    for (byte j = 0; j < 9; j++) {
+                        if (currentPlayer && current[j + 9] != 0 || !currentPlayer && current[j + 18] != 0) continue;
+                        byte[] child = copy(current);
+                        if (currentPlayer) {
+                            if (current[i] != -1) {
+                                if (j + 16 <= current[i]) continue;
+                            }
+                            child[i] = j;
+                            child[j + 9] = 1;
+                        } else {
+                            if (current[i] != -1) {
+                                if (j <= current[i]) continue;
+                            }
+                            child[i] = (byte) (j + 16);
+                            child[j + 18] = 1;
+                        }
+                        children[ptr++] = child;
+                    }
+                }
+
+                return children;
+            }
+        }
 
         if(currentPlayer) {
             for (int i = 0; i < 9; i++) {
@@ -183,7 +217,7 @@ public class CompetitionAI extends PenguAI {
                         byte[] child = copy(current);
                         child[i] = j;
                         child[j + 9] = 1;
-                        children[ptr++] = child;
+                        children[(8 - j) * 9 + i] = child;
                     }
                 } else if(current[i] >= 16) {
                     for(byte j = (byte) (current[i] + 1); j <= 24; j++) {
@@ -191,7 +225,7 @@ public class CompetitionAI extends PenguAI {
                         byte[] child = copy(current);
                         child[i] = (byte) (j - 16);
                         child[j - 16 + 9] = 1;
-                        children[ptr++] = child;
+                        children[(8 - j + 16) * 9 + i] = child;
                     }
                 }
             }
@@ -203,7 +237,7 @@ public class CompetitionAI extends PenguAI {
                         byte[] child = copy(current);
                         child[i] = j;
                         child[j - 16 + 18] = 1;
-                        children[ptr++] = child;
+                        children[(8 - j + 16) * 9 + i] = child;
                     }
                 } else if(current[i] < 16) {
                     for(byte j = (byte) (current[i] + 1); j <= 8; j++) {
@@ -211,59 +245,12 @@ public class CompetitionAI extends PenguAI {
                         byte[] child = copy(current);
                         child[i] = (byte) (j + 16);
                         child[j + 18] = 1;
-                        children[ptr++] = child;
+                        children[(8 - j) * 9 + i] = child;
                     }
                 }
             }
         }
 
         return children;
-    }
-
-    private Move getMove(byte[] current, byte[] next) {
-        if(next == null) return null;
-
-        Move m = null;
-        for(int i = 0; i < 9; i++) {
-            if(current[i] != next[i]) {
-               m = new Move(i % 3, i / 3, next[i] & 15);
-               break;
-            }
-        }
-
-        return m;
-    }
-
-    private byte[] parseByteArr(Field[][] field, boolean[] movesX, boolean[] movesO) {
-        byte[] arr = new byte[27];
-
-        for(int i = 0; i < 9; i++) {
-            Field f = field[i % 3][i / 3];
-            if(f == null) {
-                arr[i] = -1;
-            } else {
-                arr[i] = (byte) (f.firstPlayer() ? 0 : 16);
-                arr[i] += f.value();
-            }
-        }
-
-        for(int i = 9; i < 27; i++) {
-            if(i < 18) {
-                arr[i] = (byte) (movesX[i - 9] ? 1 : 0);
-            } else {
-                arr[i] = (byte) (movesO[i - 18] ? 1 : 0);
-            }
-        }
-
-        return arr;
-    }
-
-    private byte[] copy(byte[] arr) {
-        byte[] c = new byte[27];
-        for(int i = 0; i < 27; i++) {
-            c[i] = arr[i];
-        }
-
-        return c;
     }
 }

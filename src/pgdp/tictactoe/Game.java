@@ -1,6 +1,7 @@
 package pgdp.tictactoe;
 
 import pgdp.tictactoe.ai.CompetitionAI;
+import pgdp.tictactoe.ai.HumanPlayer;
 
 import java.util.Random;
 
@@ -39,6 +40,22 @@ public class Game {
         while(this.winner == null && !checkForDraw()) {
             this.step();
         }
+    }
+
+    public void playGame(boolean firstStarts) {
+        if(!firstStarts) {
+            validate(false, second.makeMove(board, false, firstPlayedPieces, secondPlayedPieces));
+            if(this.winner != null) {
+                System.out.println("invalid move");
+                return;
+            }
+
+            printBoard(board);
+
+            this.winner = checkForWinner(true);
+        }
+
+        playGame();
     }
 
     public void setBoard(Field[][] board) {
@@ -160,16 +177,16 @@ public class Game {
     }
 
     public static void main(String[] args) {
-        PenguAI firstPlayer = new CompetitionAI(6);
-        PenguAI secondPlayer = new CompetitionAI(6);
+        PenguAI firstPlayer = new CompetitionAI();
+        PenguAI secondPlayer = new CompetitionAI();
 
-        //tournament(firstPlayer, secondPlayer);
+        tournament(firstPlayer, secondPlayer);
 
         Game game = new Game(firstPlayer, secondPlayer);
 
 
         long t1 = System.nanoTime();
-        game.playGame();
+        //Game.playGame();
 
         System.out.println("Time taken: " + (System.nanoTime() - t1) / 1000000 + "ms");
 
@@ -188,6 +205,8 @@ public class Game {
         int winO = 0;
         int draw = 0;
 
+
+        boolean prev = false;
         for(int i = 0; i < 50; i++) {
             Random r = new Random(i / 2);
             Game game = (i % 2 == 0) ?  new Game(x, o) :  new Game(o, x);
@@ -197,15 +216,25 @@ public class Game {
             int v = r.nextInt(9);
 
             game.board[f / 3][f % 3] = new Field(v, true);
+            game.getFirstPlayedPieces()[v] = true;
+            game.playGame(false);
 
-            game.playGame();
+            if(i % 2 == 0) {
+                if(game.getWinner() != null) prev = true;
+            } else {
+                if((game.getWinner() == null) == prev) System.out.println("beep");
+                prev = false;
+            }
 
             if (x == game.getWinner()) {
                 winX++;
+                System.out.println("win for x");
             } else if (o == game.getWinner()) {
                 winO++;
+                System.out.println("win for o");
             } else {
                 draw++;
+                System.out.println("draw");
             }
         }
 

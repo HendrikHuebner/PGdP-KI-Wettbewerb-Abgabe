@@ -1,25 +1,24 @@
 package pgdp.tictactoe.ai;
 
+import java.io.Serializable;
 import java.util.Arrays;
 
-public class PositionWrapper {
+public class PositionWrapper implements Serializable {
+    private static final long serialVersionUID = 69420L;
+    public final byte[] position = new byte[27];
 
-    private final byte[] position = new byte[9];
-    private final int eval;
-
-    public PositionWrapper(byte[] p, int eval) {
-        for(int i = 0; i < 9; i++) {
+    public PositionWrapper(byte[] p) {
+        for(int i = 0; i < 27; i++) {
             this.position[i] = p[i];
         }
 
-        this.eval = eval;
     }
 
     @Override
     public int hashCode() {
         int result = 1;
 
-        for(int i = 0; i < 9; i++) {
+        for(int i = 0; i < 27; i++) {
             result = 31 * result + this.position[i];
         }
 
