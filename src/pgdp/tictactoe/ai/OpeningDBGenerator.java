@@ -121,15 +121,13 @@ public class OpeningDBGenerator {
         try {
 
             //FIXME: Danke <3
-            URL resource = OpeningDBGenerator.class.getClassLoader().getResource("opening_db.txt");
-            FileInputStream fileInputStream = new FileInputStream(new File(resource.toURI()));
+            //URL resource = OpeningDBGenerator.class.getClassLoader().getResource("opening_db.txt");
+            FileInputStream fileInputStream = new FileInputStream("opening_db.txt"); //new File(resource.toURI()));
 
             ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
             db = (Map<PositionWrapper, PositionInfo>) objectInputStream.readObject();
             objectInputStream.close();
         } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (URISyntaxException e) {
             e.printStackTrace();
         }
 

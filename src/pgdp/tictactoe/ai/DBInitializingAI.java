@@ -104,20 +104,42 @@ public class DBInitializingAI extends PenguAI {
 
         if(bestRet == null) {
             //no children
+            byte[][] arr = new byte[maxDepth][];
+            arr[depth - 1] = null;
 
             boolean draw = true;
-            for(int i = 0; i < 9; i++) {
-                if(current[((max == playerX) ? 9 : 18) + i] == 0) {
+            for (int i = 0; i < 9; i++) {
+                if (current[((max == playerX) ? 9 : 18) + i] == 0) {
                     draw = false;
                     break;
                 }
             }
 
-            return new PositionInfo(bestChild, draw ? 0 : -99999 + maxDepth - depth);
+            int resVal = -99999 + maxDepth - depth;
+            if (draw) {
+                int first = 0;
+                int second = 0;
+                for (int i = 0; i < 9; i++) {
+                    if (current[i] == -1) continue;
+                    if (current[i] >= 16) {
+                        second += current[i] - 16;
+                    } else {
+                        first += current[i];
+                    }
+                }
+
+                if (first == second) {
+                    resVal = 0;
+                } else if (first < second && max == playerX) {
+                    resVal = 99999 - maxDepth + depth;
+                }
+
+            }
+
+            return new PositionInfo(null, resVal);
         }
 
         return new PositionInfo(bestChild, value);
-
     }
 
 

@@ -41,12 +41,6 @@ public class CompetitionAI extends PenguAI {
         long prevSearched = this.statesSearched;
         byte[] current = parseByteArr(board, firstPlayedPieces, secondPlayedPieces);
 
-        //hardcode first move
-        if(AIHelper.getHalfMove(current) == 0 && firstPlayer) {
-            Random r = new Random();
-            return new Move[] {new Move(1, 1, 8), new Move(0, 0, 4), new Move(2, 2, 0)}[r.nextInt(3)];
-        }
-
 
         PositionInfo positionInfo = alphaBeta(current, maxDepth, -99999, 99999, true, firstPlayer);
 
@@ -115,7 +109,7 @@ public class CompetitionAI extends PenguAI {
                 }
             }
 
-            int resVal = -99999 + maxDepth - depth;
+            int resVal = -99999 + maxDepth - depth - 1;
             if(draw) {
                 int first = 0;
                 int second = 0;
@@ -131,9 +125,8 @@ public class CompetitionAI extends PenguAI {
                 if(first == second) {
                     resVal = 0;
                 } else if (first < second && max == playerX) {
-                    resVal = 99999 - maxDepth + depth;
+                    resVal = 99999 - maxDepth + depth + 1;
                 }
-
             }
 
             return new PositionInfo(null, resVal);

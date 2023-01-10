@@ -3,6 +3,7 @@ package pgdp.tictactoe;
 import pgdp.tictactoe.ai.AIHelper;
 import pgdp.tictactoe.ai.CompetitionAI;
 import pgdp.tictactoe.ai.DBInitializingAI;
+import pgdp.tictactoe.ai.HumanPlayer;
 
 import java.util.Random;
 
@@ -78,7 +79,8 @@ public class Game {
         this.winner = checkForWinner(false);
         if(this.winner != null) return;
 
-        validate(false, second.makeMove(board, false, firstPlayedPieces, secondPlayedPieces));
+        var m = second.makeMove(board, false, firstPlayedPieces, secondPlayedPieces);
+        validate(false, m);
         if(this.winner != null) {
             System.out.println("invalid move");
             return;
@@ -178,8 +180,8 @@ public class Game {
     }
 
     public static void main(String[] args) {
-        PenguAI ai1 = new CompetitionAI();
         PenguAI ai2 = new CompetitionAI();
+        PenguAI ai1 = new CompetitionAI();
         Game g = new Game(ai1, ai2);
         //g.getBoard()[2][2] = new Field(0, true);
         //g.getFirstPlayedPieces()[0] = true;
